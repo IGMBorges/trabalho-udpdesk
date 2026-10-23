@@ -6,7 +6,7 @@ HOST = '127.0.0.1'
 PORTA = 5000
 
 cliente_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-cliente_socket.settimeout(2.0)
+cliente_socket.settimeout(5.0)
 
 
 def enviar_comando(comando):
