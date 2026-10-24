@@ -1,5 +1,6 @@
 # Ambiente virtual do Python
 venv/
+.venv/
 env/
 ENV/
 
@@ -12,3 +13,4 @@ __pycache__/
 .vscode/
 .DS_Store
 Thumbs.db
+socket_udp_backup.py

@@ -162,3 +162,36 @@ Responsável por:
 ## 6. Conclusão
 
 O projeto **UDPdesk** demonstra a aplicação prática da estrutura de dados **Fila Encadeada** na solução de problemas reais de ordenação e atendimento de chamados. A escolha pela implementação fundamentada em Tipos Abstratos de Dados (TAD) e dicionários permitiu o domínio explícito da manipulação de ponteiros e alocação de memória, enquanto o protocolo UDP garantiu uma arquitetura de rede simples, rápida e eficiente.
+## 7. Atualizações de implementação
+
+O servidor UDP foi atualizado para permitir o processamento simultâneo da entrada local de chamados e das solicitações de rede.
+
+As principais alterações são:
+
+1. A leitura de descrições no terminal ocorre em uma thread separada. Dessa forma, o servidor não fica bloqueado em `input()` enquanto aguarda mensagens UDP.
+2. A fila é protegida por `threading.Lock`, evitando alterações concorrentes durante operações como `push`, `pop`, `peek` e `get_all`.
+3. Um `threading.Event` controla o encerramento do servidor e da thread de entrada local.
+4. Os comandos recebidos continuam sendo textos (`ATENDER`, `TAMANHO`, `ESPIAR` e `IMPRIMIR`). As respostas do servidor são enviadas em JSON.
+5. Comandos desconhecidos retornam uma mensagem de erro sem derrubar o servidor.
+6. O cliente trata timeout, erros de comunicação e respostas JSON inválidas.
+7. O socket do cliente é fechado corretamente ao sair do menu.
+
+### Ambiente virtual
+
+O projeto utiliza um ambiente virtual Python para manter o ambiente de execução isolado. Os diretórios `venv/`, `.venv/`, `env/` e `ENV/` estão no `.gitignore` e não devem ser versionados.
+
+Para criar e ativar um novo ambiente no PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+Com o ambiente ativado, execute o servidor e o cliente em terminais separados:
+
+```powershell
+python socket_udp.py
+python socket_udp_client.py
+```
+
+Durante o teste, o servidor pode permanecer aguardando uma nova descrição no terminal enquanto o cliente consulta ou altera a fila. As respostas devem ser processadas normalmente.
