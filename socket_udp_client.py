@@ -5,11 +5,8 @@ import socket
 HOST = '127.0.0.1'
 PORTA = 5000
 
-cliente_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-cliente_socket.settimeout(5.0)
 
-
-def enviar_comando(comando):
+def enviar_comando(cliente_socket, comando):
     try:
         cliente_socket.sendto(
             comando.encode('utf-8'),
@@ -31,7 +28,7 @@ def enviar_comando(comando):
         return 'Erro ao comunicar com o servidor.'
 
 
-def menu():
+def menu(cliente_socket):
     while True:
         print('\n' + '=' * 35)
         print('    PAINEL DO TÉCNICO (APLICAÇÃO 2)')
@@ -47,13 +44,20 @@ def menu():
         if opcao in ['1', '2', '3', '4']:
             cmds = {'1': 'ATENDER', '2': 'TAMANHO',
                     '3': 'ESPIAR', '4': 'IMPRIMIR'}
-            print(f'\n{enviar_comando(cmds[opcao])}')
+            print(f'\n{enviar_comando(cliente_socket, cmds[opcao])}')
         elif opcao == '0':
             break
 
 
-if __name__ == '__main__':
+def main():
+    cliente_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    cliente_socket.settimeout(5.0)
+
     try:
-        menu()
+        menu(cliente_socket)
     finally:
         cliente_socket.close()
+
+
+if __name__ == '__main__':
+    main()

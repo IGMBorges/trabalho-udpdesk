@@ -16,15 +16,6 @@ id_counter = 1
 encerrar = threading.Event()
 fila_lock = threading.Lock()
 
-servidor_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-servidor_socket.bind((HOST, PORTA))
-servidor_socket.setblocking(False)
-
-print('=' * 55)
-print('     UDPdesk - APLICAÇÃO 1 (USUÁRIO / SERVIDOR)')
-print(f' Escutando em {HOST}:{PORTA}')
-print('=' * 55)
-
 
 def receber_chamados_localmente():
     global id_counter
@@ -54,91 +45,105 @@ def receber_chamados_localmente():
             id_counter += 1
 
 
-thread_entrada = threading.Thread(
-    target=receber_chamados_localmente,
-    daemon=True
-)
+def main():
+    servidor_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    servidor_socket.bind((HOST, PORTA))
+    servidor_socket.setblocking(False)
 
-thread_entrada.start()
+    print('=' * 55)
+    print('     UDPdesk - APLICAÇÃO 1 (USUÁRIO / SERVIDOR)')
+    print(f' Escutando em {HOST}:{PORTA}')
+    print('=' * 55)
 
-try:
-    while not encerrar.is_set():
-        prontos, _, _ = select.select([servidor_socket], [], [], 0.1)
+    thread_entrada = threading.Thread(
+        target=receber_chamados_localmente,
+        daemon=True
+    )
 
-        if not prontos:
-            continue
+    thread_entrada.start()
 
-        dados, endereco_cliente = servidor_socket.recvfrom(1024)
-        comando = dados.decode('utf-8').strip()
-        resposta = {}
+    try:
+        while not encerrar.is_set():
+            prontos, _, _ = select.select([servidor_socket], [], [], 0.1)
 
-        with fila_lock:
-            if comando == 'ATENDER':
-                chamado = operations.pop(fila_suporte)
+            if not prontos:
+                continue
 
-                if chamado:
+            dados, endereco_cliente = servidor_socket.recvfrom(1024)
+            comando = dados.decode('utf-8').strip()
+            resposta = {}
+
+            with fila_lock:
+                if comando == 'ATENDER':
+                    chamado = operations.pop(fila_suporte)
+
+                    if chamado:
+                        resposta = {
+                            'status': 'OK',
+                            'msg': f'Atendendo chamado #{chamado["id"]}: {chamado["desc"]}',
+                        }
+                    else:
+                        resposta = {
+                            'status': 'ERRO',
+                            'msg': 'A fila de suporte esta vazia!'
+                        }
+
+                elif comando == 'TAMANHO':
                     resposta = {
                         'status': 'OK',
-                        'msg': f'Atendendo chamado #{chamado["id"]}: {chamado["desc"]}',
+                        'msg': f'O tamanho atual da fila e: {fila_suporte["size"]}',
                     }
+
+                elif comando == 'ESPIAR':
+                    proximo = operations.peek(fila_suporte)
+
+                    if proximo:
+                        resposta = {
+                            'status': 'OK',
+                            'msg': f'Proximo: #{proximo["id"]} - {proximo["desc"]}',
+                        }
+                    else:
+                        resposta = {
+                            'status': 'ERRO',
+                            'msg': 'Nenhum chamado pendente.'
+                        }
+
+                elif comando == 'IMPRIMIR':
+                    todos = operations.get_all(fila_suporte)
+
+                    if todos:
+                        lista_str = ', '.join(
+                            f'#{c["id"]} ({c["desc"]})'
+                            for c in todos
+                        )
+                        resposta = {
+                            'status': 'OK',
+                            'msg': f'Fila atual: [{lista_str}]'
+                        }
+                    else:
+                        resposta = {
+                            'status': 'OK',
+                            'msg': 'Fila vazia.'
+                        }
+
                 else:
                     resposta = {
                         'status': 'ERRO',
-                        'msg': 'A fila de suporte esta vazia!'
+                        'msg': 'Comando desconhecido.'
                     }
 
-            elif comando == 'TAMANHO':
-                resposta = {
-                    'status': 'OK',
-                    'msg': f'O tamanho atual da fila e: {fila_suporte["size"]}',
-                }
+            servidor_socket.sendto(
+                json.dumps(resposta).encode('utf-8'),
+                endereco_cliente
+            )
 
-            elif comando == 'ESPIAR':
-                proximo = operations.peek(fila_suporte)
+    except KeyboardInterrupt:
+        print('\nEncerrando...')
 
-                if proximo:
-                    resposta = {
-                        'status': 'OK',
-                        'msg': f'Proximo: #{proximo["id"]} - {proximo["desc"]}',
-                    }
-                else:
-                    resposta = {
-                        'status': 'ERRO',
-                        'msg': 'Nenhum chamado pendente.'
-                    }
+    finally:
+        encerrar.set()
+        servidor_socket.close()
 
-            elif comando == 'IMPRIMIR':
-                todos = operations.get_all(fila_suporte)
 
-                if todos:
-                    lista_str = ', '.join(
-                        f'#{c["id"]} ({c["desc"]})'
-                        for c in todos
-                    )
-                    resposta = {
-                        'status': 'OK',
-                        'msg': f'Fila atual: [{lista_str}]'
-                    }
-                else:
-                    resposta = {
-                        'status': 'OK',
-                        'msg': 'Fila vazia.'
-                    }
-
-            else:
-                resposta = {
-                    'status': 'ERRO',
-                    'msg': 'Comando desconhecido.'
-                }
-
-        servidor_socket.sendto(
-            json.dumps(resposta).encode('utf-8'),
-            endereco_cliente
-        )
-
-except KeyboardInterrupt:
-    print('\nEncerrando...')
-
-finally:
-    encerrar.set()
-    servidor_socket.close()
+if __name__ == '__main__':
+    main()
