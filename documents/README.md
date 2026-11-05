@@ -34,15 +34,15 @@ cd trabalho-udpdesk
 No Windows PowerShell:
 
 ```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
 
 No Linux ou macOS:
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
 ### 3. Inicie o servidor
@@ -93,13 +93,18 @@ Os chamados são atendidos no modelo **FIFO** (*First In, First Out*): o primeir
 ├── operations.py           # Operações push, pop, peek e get_all
 ├── socket_udp.py           # Servidor UDP e entrada de chamados
 ├── socket_udp_client.py    # Cliente UDP e painel do técnico
-├── documenta_o_do_projeto.md
+├── documents/
+│   ├── README.md
+│   └── documenta_o_do_projeto.md
 └── .gitignore
 ```
+
+Os comandos de execução devem ser rodados na raiz do projeto, onde estão os arquivos `.py`.
 
 ## Observações
 
 - O servidor deve ser iniciado antes do cliente.
+- `socket_udp.py` e `socket_udp_client.py` têm uma função `main()` protegida por `if __name__ == '__main__':`. Assim, o servidor e o cliente só iniciam quando o arquivo é executado diretamente, e importá-lo não abre o socket nem inicia o menu ou o loop do servidor.
 - A fila existe apenas durante a execução do servidor; os chamados não são persistidos em arquivo ou banco de dados.
 - A configuração padrão aceita conexões somente localmente (`127.0.0.1`). Para executar em máquinas diferentes, altere `HOST` no servidor e no cliente conforme a rede utilizada.
 - Como o projeto usa UDP, a comunicação não possui conexão persistente nem garantia de entrega; o cliente possui um tempo limite de 5 segundos para respostas.

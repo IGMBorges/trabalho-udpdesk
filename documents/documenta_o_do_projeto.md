@@ -120,14 +120,16 @@ Contém as funções de manipulação da estrutura de dados:
 Responsável por:
 1. Manter a instância da Fila em memória ativa durante a execução.
 2. Criar o socket UDP (`AF_INET`, `SOCK_DGRAM`) vinculado ao endereço `127.0.0.1:5000`.
-3. Utilizar multiplexação E/S via módulo `select` com soquete não-bloqueante (`setblocking(False)`), permitindo que o servidor aceite digitação no terminal local para inserção de chamados ao mesmo tempo em que escuta solicitações de rede.
-4. Processar comandos serializados em JSON recebidos dos clientes e enviar as respostas correspondentes.
+3. Ler as descrições de chamados digitadas no terminal em uma thread separada, enquanto o loop principal escuta as solicitações de rede com o módulo `select` e um soquete não-bloqueante (`setblocking(False)`). Assim, o servidor aceita as duas entradas ao mesmo tempo.
+4. Processar os comandos recebidos dos clientes em texto puro e enviar as respostas correspondentes serializadas em JSON.
+5. Concentrar a inicialização na função `main()`, protegida por `if __name__ == '__main__':`. O socket, a thread de entrada e o loop do servidor só são iniciados quando o arquivo é executado diretamente.
 
 ### 4.4 `socket_udp_client.py` — Cliente e Aplicação 2 (Painel do Técnico)
 Responsável por:
 1. Fornecer a interface CLI interativa para o técnico de suporte.
 2. Formatar e enviar mensagens de texto contendo os comandos operacionais (`ATENDER`, `TAMANHO`, `ESPIAR`, `IMPRIMIR`).
 3. Implementar controle de tempo limite via tratamento de exceção `TimeoutError` para evitar o travamento da aplicação caso o servidor esteja inacessível.
+4. Criar o socket na função `main()`, protegida por `if __name__ == '__main__':`, e passá-lo como parâmetro para `menu(cliente_socket)` e `enviar_comando(cliente_socket, comando)`, sem depender de variável global.
 
 ---
 
@@ -137,7 +139,7 @@ Responsável por:
 
 1. **Ativação do Ambiente Virtual:**
    ```powershell
-   .\venv\Scripts\Activate.ps1
+   .\.venv\Scripts\Activate.ps1
    ```
 
 2. **Inicialização do Servidor (Terminal 1 - Esquerda):**
@@ -175,6 +177,8 @@ As principais alterações são:
 5. Comandos desconhecidos retornam uma mensagem de erro sem derrubar o servidor.
 6. O cliente trata timeout, erros de comunicação e respostas JSON inválidas.
 7. O socket do cliente é fechado corretamente ao sair do menu.
+8. O servidor e o cliente passaram a ter uma função `main()` protegida por `if __name__ == '__main__':`. A forma de executar e o comportamento das aplicações não mudaram, mas importar os módulos não abre mais a porta 5000 nem inicia o servidor.
+9. O `README.md` e esta documentação foram movidos para a pasta `documents/`. Os comandos de execução continuam sendo rodados na raiz do projeto, onde estão os arquivos `.py`.
 
 ### Ambiente virtual
 
